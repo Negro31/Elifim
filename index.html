@@ -175,15 +175,16 @@
 
     <button class="music-button" id="musicButton">💜 Müziği Aç</button>
 
-    <!-- Romantik Lo-fi Müzik (Gerçek çalışan müzik) -->
+    <!-- Romantik Ambient Müzik (Ay konseptine uygun) -->
     <audio id="bgMusic" loop preload="auto">
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+        <!-- Romantik piano ve ambient müzik -->
+        <source src="https://cdn.freesound.org/previews/578/578130_3797507-lq.mp3" type="audio/mpeg">
     </audio>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        let scene, camera, renderer, moon, textGroup;
+        let scene, camera, renderer, moon, textMesh;
         let touchStartX = 0, touchStartY = 0;
         let targetRotationY = 0, currentRotationY = 0;
         let musicPlaying = false;
@@ -202,39 +203,37 @@
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Işıklandırma
-            const ambientLight = new THREE.AmbientLight(0x4b0082, 0.3);
+            // Mor-pembe ışıklandırma
+            const ambientLight = new THREE.AmbientLight(0x8a2be2, 0.4);
             scene.add(ambientLight);
 
-            const mainLight = new THREE.PointLight(0x8a2be2, 2.5, 100);
+            const mainLight = new THREE.PointLight(0xff00ff, 2.5, 100);
             mainLight.position.set(5, 5, 15);
             mainLight.castShadow = true;
             scene.add(mainLight);
 
-            const spotLight = new THREE.SpotLight(0xff00ff, 1.8);
+            const spotLight = new THREE.SpotLight(0xff66ff, 2);
             spotLight.position.set(-10, 10, 20);
             spotLight.angle = Math.PI / 3;
-            spotLight.castShadow = true;
             scene.add(spotLight);
 
-            const fillLight = new THREE.PointLight(0x9370db, 1.2, 80);
+            const fillLight = new THREE.PointLight(0xcc99ff, 1.5, 80);
             fillLight.position.set(10, -5, 10);
             scene.add(fillLight);
 
-            // Gerçekçi Ay
-            createRealisticMoon();
+            // Mor-pembe uyumlu Ay
+            createPurplePinkMoon();
 
             // Gerçekçi yıldızlar
             createRealisticStars();
 
-            // 3D "ELİFİM" yazısı
-            create3DText();
+            // Birleşik "ELİFİM" yazısı - sağdan sola dönen
+            createUnifiedText();
 
             // Event listeners
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('click', createParticles);
             
-            // Touch ve mouse events
             renderer.domElement.addEventListener('mousedown', onPointerStart);
             renderer.domElement.addEventListener('mousemove', onPointerMove);
             renderer.domElement.addEventListener('mouseup', onPointerEnd);
@@ -243,39 +242,75 @@
             renderer.domElement.addEventListener('touchmove', onPointerMove);
             renderer.domElement.addEventListener('touchend', onPointerEnd);
 
-            // Müzik kontrolü
             setupMusicControl();
 
             animate();
         }
 
-        function createRealisticMoon() {
+        function createPurplePinkMoon() {
             const moonGeometry = new THREE.SphereGeometry(3.5, 128, 128);
             
-            // Detaylı Ay texture'ı
-            const textureLoader = new THREE.TextureLoader();
+            // Mor-pembe renkli prosedürel texture
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 2048;
+            const ctx = canvas.getContext('2d');
             
-            const moonTexture = textureLoader.load(
-                'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',
-                function() {
-                    console.log('Ay texture başarıyla yüklendi');
-                },
-                undefined,
-                function() {
-                    // Texture yüklenemezse prosedürel texture oluştur
-                    createProceduralMoonTexture();
-                }
-            );
-
+            // Mor-pembe gradient base
+            const gradient = ctx.createRadialGradient(1024, 1024, 0, 1024, 1024, 1024);
+            gradient.addColorStop(0, '#cc99ff');
+            gradient.addColorStop(0.3, '#9966ff');
+            gradient.addColorStop(0.6, '#8a2be2');
+            gradient.addColorStop(0.8, '#6a0dad');
+            gradient.addColorStop(1, '#4b0082');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 2048, 2048);
+            
+            // Mor-pembe kraterler ve detaylar
+            for (let i = 0; i < 150; i++) {
+                const x = Math.random() * 2048;
+                const y = Math.random() * 2048;
+                const radius = Math.random() * 80 + 20;
+                
+                const craterGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                craterGrad.addColorStop(0, '#2d0047');
+                craterGrad.addColorStop(0.5, '#4b0082');
+                craterGrad.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = craterGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Pembe parlamalar ekle
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * 2048;
+                const y = Math.random() * 2048;
+                const radius = Math.random() * 40 + 10;
+                
+                const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                glowGrad.addColorStop(0, 'rgba(255, 102, 255, 0.3)');
+                glowGrad.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
             const moonMaterial = new THREE.MeshPhongMaterial({
-                map: moonTexture,
-                bumpMap: moonTexture,
-                bumpScale: 0.15,
-                color: 0xcccccc,
+                map: texture,
+                bumpMap: texture,
+                bumpScale: 0.2,
+                color: 0xffccff,
                 emissive: 0x8a2be2,
-                emissiveIntensity: 0.15,
-                shininess: 5,
-                specular: 0x333333
+                emissiveIntensity: 0.25,
+                shininess: 8,
+                specular: 0xff00ff
             });
 
             moon = new THREE.Mesh(moonGeometry, moonMaterial);
@@ -283,54 +318,30 @@
             moon.receiveShadow = true;
             scene.add(moon);
 
-            // Ay'a hafif glow
-            const glowGeometry = new THREE.SphereGeometry(3.65, 64, 64);
+            // Pembe-mor glow halo
+            const glowGeometry = new THREE.SphereGeometry(3.7, 64, 64);
             const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x8a2be2,
+                color: 0xff66ff,
                 transparent: true,
-                opacity: 0.12,
+                opacity: 0.15,
                 side: THREE.BackSide
             });
             const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
             moon.add(glowMesh);
-        }
 
-        function createProceduralMoonTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 1024;
-            canvas.height = 1024;
-            const ctx = canvas.getContext('2d');
-            
-            const gradient = ctx.createRadialGradient(512, 512, 0, 512, 512, 512);
-            gradient.addColorStop(0, '#9370db');
-            gradient.addColorStop(0.5, '#4b0082');
-            gradient.addColorStop(1, '#2d004d');
-            
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, 1024, 1024);
-            
-            // Kraterler ekle
-            for (let i = 0; i < 80; i++) {
-                const x = Math.random() * 1024;
-                const y = Math.random() * 1024;
-                const radius = Math.random() * 40 + 10;
-                
-                const craterGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-                craterGrad.addColorStop(0, '#1a0033');
-                craterGrad.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = craterGrad;
-                ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-            }
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            moon.material.map = texture;
-            moon.material.bumpMap = texture;
-            moon.material.needsUpdate = true;
+            // İkinci glow katmanı
+            const glow2Geometry = new THREE.SphereGeometry(3.85, 64, 64);
+            const glow2Material = new THREE.MeshBasicMaterial({
+                color: 0x8a2be2,
+                transparent: true,
+                opacity: 0.1,
+                side: THREE.BackSide
+            });
+            const glow2Mesh = new THREE.Mesh(glow2Geometry, glow2Material);
+            moon.add(glow2Mesh);
         }
 
         function createRealisticStars() {
-            // Gerçekçi yıldız sistemi - farklı boyut ve parlaklıkta
             const starConfigs = [
                 { count: 1500, size: [0.5, 1.5], color: 0x8a2be2, opacity: [0.6, 1], range: 150 },
                 { count: 1200, size: [0.3, 1], color: 0xff00ff, opacity: [0.5, 0.9], range: 130 },
@@ -397,63 +408,69 @@
                 const starField = new THREE.Points(geometry, material);
                 starField.userData = {
                     speed: 0.00005 * (layerIndex + 1),
-                    wobble: 0.0001 * (layerIndex + 1),
-                    layer: layerIndex
+                    wobble: 0.0001 * (layerIndex + 1)
                 };
                 scene.add(starField);
                 stars.push(starField);
             });
         }
 
-        function create3DText() {
-            textGroup = new THREE.Group();
+        function createUnifiedText() {
+            // "ELİFİM" yazısını tek bir canvas'ta birleşik olarak oluştur
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            // Neon gradient
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+            gradient.addColorStop(0, '#ff00ff');
+            gradient.addColorStop(0.25, '#ff66ff');
+            gradient.addColorStop(0.5, '#ff99ff');
+            gradient.addColorStop(0.75, '#ff66ff');
+            gradient.addColorStop(1, '#8a2be2');
+
+            // Çok güçlü glow efekti
+            ctx.shadowBlur = 60;
+            ctx.shadowColor = '#ff00ff';
             
-            const text = "ELİFİM";
-            const radius = 7;
-            const totalAngle = Math.PI * 2;
-            const anglePerChar = totalAngle / text.length;
+            ctx.font = 'bold 280px Arial';
+            ctx.fillStyle = gradient;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.letterSpacing = '-10px'; // Harfleri birleştir
+            ctx.fillText('ELİFİM', canvas.width / 2, canvas.height / 2);
 
-            text.split('').forEach((char, i) => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
-                const ctx = canvas.getContext('2d');
+            // İkinci katman neon
+            ctx.shadowBlur = 80;
+            ctx.shadowColor = '#8a2be2';
+            ctx.fillText('ELİFİM', canvas.width / 2, canvas.height / 2);
 
-                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-                gradient.addColorStop(0, '#ff00ff');
-                gradient.addColorStop(0.5, '#ff99ff');
-                gradient.addColorStop(1, '#8a2be2');
+            // Üçüncü katman ışık
+            ctx.shadowBlur = 100;
+            ctx.shadowColor = '#ff66ff';
+            ctx.fillText('ELİFİM', canvas.width / 2, canvas.height / 2);
 
-                ctx.shadowBlur = 30;
-                ctx.shadowColor = '#ff00ff';
-                ctx.font = 'bold 180px Arial';
-                ctx.fillStyle = gradient;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(char, 128, 128);
-
-                const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.MeshBasicMaterial({
-                    map: texture,
-                    transparent: true,
-                    opacity: 0.95,
-                    side: THREE.DoubleSide
-                });
-
-                const geometry = new THREE.PlaneGeometry(2, 2);
-                const mesh = new THREE.Mesh(geometry, material);
-                
-                const angle = i * anglePerChar;
-                mesh.userData = {
-                    angle: angle,
-                    radius: radius,
-                    index: i
-                };
-                
-                textGroup.add(mesh);
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            const textMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0.95,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
             });
 
-            scene.add(textGroup);
+            // Geniş düzlemsel mesh (tek parça yazı)
+            const textGeometry = new THREE.PlaneGeometry(16, 4);
+            textMesh = new THREE.Mesh(textGeometry, textMaterial);
+            
+            textMesh.userData = {
+                radius: 7.5,
+                angle: 0
+            };
+            
+            scene.add(textMesh);
         }
 
         function animate() {
@@ -461,30 +478,29 @@
 
             const time = Date.now() * 0.001;
 
-            // Ay gerçekçi şekilde dönüyor
+            // Ay gerçekçi dönüyor
             moon.rotation.y += 0.002;
             moon.rotation.x = Math.sin(time * 0.2) * 0.03;
             moon.position.y = Math.sin(time * 0.15) * 0.08;
 
-            // "ELİFİM" yazısı soldan sağa dönüyor (yerçekimi kanunlarına uygun)
-            textGroup.rotation.y += 0.005; // Pozitif = soldan sağa
+            // "ELİFİM" yazısı SAĞDAN SOLA Ay'ın etrafında dönüyor (negatif = sağdan sola)
+            textMesh.userData.angle -= 0.004; // Negatif = sağdan sola (saatin tersi)
+            
+            const angle = textMesh.userData.angle;
+            const radius = textMesh.userData.radius;
+            
+            // Yatay düzlemde dairesel hareket
+            textMesh.position.x = Math.cos(angle) * radius;
+            textMesh.position.z = Math.sin(angle) * radius;
+            textMesh.position.y = Math.sin(time * 1.5) * 0.2; // Hafif yukarı-aşağı
+            
+            // Yazı her zaman kameraya bakıyor (billboard effect)
+            textMesh.lookAt(camera.position);
+            
+            // Parlama efekti
+            textMesh.material.opacity = 0.9 + Math.sin(time * 3) * 0.1;
 
-            textGroup.children.forEach((mesh, i) => {
-                const baseAngle = mesh.userData.angle;
-                const currentAngle = baseAngle + textGroup.rotation.y;
-                
-                mesh.position.x = Math.cos(currentAngle) * mesh.userData.radius;
-                mesh.position.z = Math.sin(currentAngle) * mesh.userData.radius;
-                mesh.position.y = Math.sin(time * 2 + i * 0.5) * 0.15;
-                
-                // Her harf kameraya bakıyor
-                mesh.lookAt(camera.position);
-                
-                // Parlama efekti
-                mesh.material.opacity = 0.88 + Math.sin(time * 3 + i) * 0.12;
-            });
-
-            // Gerçekçi yıldız hareketi
+            // Yıldızlar hareket ediyor
             stars.forEach(starField => {
                 starField.rotation.y += starField.userData.speed;
                 starField.rotation.x += starField.userData.wobble * 0.5;
@@ -502,9 +518,7 @@
 
         function onPointerStart(e) {
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             touchStartX = clientX;
-            touchStartY = clientY;
         }
 
         function onPointerMove(e) {
@@ -513,14 +527,11 @@
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const deltaX = clientX - touchStartX;
             
-            // Sağa kaydırma = sağa bakış, Sola kaydırma = sola bakış
             targetRotationY += deltaX * 0.005;
             touchStartX = clientX;
         }
 
-        function onPointerEnd() {
-            // Parmağı kaldırınca yumuşak dönüş
-        }
+        function onPointerEnd() {}
 
         function setupMusicControl() {
             const musicButton = document.getElementById('musicButton');
@@ -536,8 +547,16 @@
                             this.textContent = '🎵 Müzik Çalıyor';
                             this.classList.add('playing');
                         }).catch(error => {
-                            console.log('Müzik otomatik çalınamadı:', error);
-                            alert('Müzik çalmak için tarayıcı izni gerekli. Lütfen tekrar deneyin.');
+                            console.log('Müzik çalınamadı:', error);
+                            // Yedek müzik URL'i dene
+                            bgMusic.src = 'https://www.bensound.com/bensound-music/bensound-dreams.mp3';
+                            bgMusic.play().then(() => {
+                                musicPlaying = true;
+                                this.textContent = '🎵 Müzik Çalıyor';
+                                this.classList.add('playing');
+                            }).catch(err => {
+                                alert('Müzik yüklenemiyor. Lütfen internet bağlantınızı kontrol edin.');
+                            });
                         });
                     }
                 } else {
