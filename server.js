@@ -23,7 +23,8 @@ app.get('*', (req, res) => {
 
 // Sunucuyu başlat
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🌙 Mor Uzay Temalı Romantik Site çalışıyor!`);
+    console.log(`🌙 Karanlık Uzay Temalı Romantik Site çalışıyor!`);
     console.log(`💜 Port: ${PORT}`);
-    console.log(`✨ Elif için hazırlandı...`);
+    console.log(`🖤 Elif için özel olarak hazırlandı...`);
+    console.log(`✨ Site ${PORT} portunda yayında!`);
 });
