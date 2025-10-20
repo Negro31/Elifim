@@ -175,29 +175,18 @@
 
     <button class="music-button" id="musicButton">💜 Müziği Aç</button>
 
+    <audio id="bgMusic" loop>
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
+    </audio>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        let scene, camera, renderer, moon, textLetters = [];
+        let scene, camera, renderer, moon, textMesh;
         let touchStartX = 0;
         let targetRotationY = 0, currentRotationY = 0;
         let musicPlaying = false;
         let stars = [];
-        let audioContext, pianoNotes = [];
-        let animationStartTime = Date.now();
-
-        // Romantik piyano notaları (C Major scale - rahatlatıcı)
-        const pianoMelody = [
-            { note: 523.25, duration: 1.5 },  // C5
-            { note: 659.25, duration: 1.5 },  // E5
-            { note: 783.99, duration: 1.5 },  // G5
-            { note: 659.25, duration: 1.5 },  // E5
-            { note: 523.25, duration: 1.5 },  // C5
-            { note: 587.33, duration: 1.5 },  // D5
-            { note: 659.25, duration: 3 },    // E5 (uzun)
-            { note: 493.88, duration: 1.5 },  // B4
-            { note: 523.25, duration: 3 }     // C5 (uzun)
-        ];
 
         function init() {
             scene = new THREE.Scene();
@@ -209,35 +198,28 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setClearColor(0x000000);
             renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Mor ışıklandırma (pembe yok!)
-            const ambientLight = new THREE.AmbientLight(0x6a0dad, 0.5);
+            // Mor ışıklandırma
+            const ambientLight = new THREE.AmbientLight(0x6a0dad, 0.6);
             scene.add(ambientLight);
 
-            const mainLight = new THREE.PointLight(0x8a2be2, 3.5, 100);
-            mainLight.position.set(8, 8, 15);
-            mainLight.castShadow = true;
+            const mainLight = new THREE.PointLight(0x8a2be2, 3, 100);
+            mainLight.position.set(10, 10, 15);
             scene.add(mainLight);
 
-            const spotLight = new THREE.SpotLight(0x9370db, 2.5);
-            spotLight.position.set(-12, 12, 20);
-            spotLight.angle = Math.PI / 3;
+            const spotLight = new THREE.SpotLight(0x9370db, 2);
+            spotLight.position.set(-15, 15, 20);
             scene.add(spotLight);
 
-            const fillLight = new THREE.PointLight(0x4b0082, 2, 80);
-            fillLight.position.set(12, -8, 10);
-            scene.add(fillLight);
+            // Gerçekçi Ay (CDN texture ile)
+            createRealisticMoon();
 
-            // Gerçekçi mor-siyah Ay
-            createRealisticPurpleBlackMoon();
+            // Yıldızlar
+            createStars();
 
-            // Gerçekçi yıldızlar
-            createRealisticStars();
-
-            // 3D "ELİFİM" harfleri - birleşik (küçük boşlukla)
-            create3DLettersUnified();
+            // BİRLEŞİK "ELİFİM" yazısı - TEK PARÇA
+            createUnifiedText();
 
             // Event listeners
             window.addEventListener('resize', onWindowResize);
@@ -249,165 +231,139 @@
             renderer.domElement.addEventListener('touchstart', onPointerStart);
             renderer.domElement.addEventListener('touchmove', onPointerMove);
 
-            setupMusicControl();
+            setupMusic();
 
             animate();
         }
 
-        function createRealisticPurpleBlackMoon() {
-            const moonGeometry = new THREE.SphereGeometry(3.5, 256, 256);
+        function createRealisticMoon() {
+            const moonGeometry = new THREE.SphereGeometry(3.5, 128, 128);
             
-            // Gerçekçi mor-siyah Ay texture
-            const canvas = document.createElement('canvas');
-            canvas.width = 4096;
-            canvas.height = 4096;
-            const ctx = canvas.getContext('2d');
-            
-            // Siyah base
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, 4096, 4096);
-            
-            // Mor gradient base (daha gerçekçi)
-            const mainGrad = ctx.createRadialGradient(2048, 2048, 400, 2048, 2048, 2048);
-            mainGrad.addColorStop(0, '#3d2b52');    // Orta mor
-            mainGrad.addColorStop(0.3, '#2d1f3d');  // Koyu mor
-            mainGrad.addColorStop(0.6, '#1a0f26');  // Çok koyu mor
-            mainGrad.addColorStop(0.85, '#0d0712'); // Siyaha yakın
-            mainGrad.addColorStop(1, '#000000');    // Saf siyah
-            
-            ctx.globalAlpha = 0.8;
-            ctx.fillStyle = mainGrad;
-            ctx.fillRect(0, 0, 4096, 4096);
-            ctx.globalAlpha = 1;
-            
-            // Büyük kraterler (gerçekçi)
-            for (let i = 0; i < 50; i++) {
-                const x = Math.random() * 4096;
-                const y = Math.random() * 4096;
-                const radius = Math.random() * 200 + 80;
-                
-                // Krater gölgesi
-                const craterGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-                craterGrad.addColorStop(0, '#000000');
-                craterGrad.addColorStop(0.3, '#0a0510');
-                craterGrad.addColorStop(0.6, '#1a0f26');
-                craterGrad.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = craterGrad;
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Krater kenarı (mor highlight)
-                ctx.strokeStyle = `rgba(138, 43, 226, ${Math.random() * 0.1 + 0.05})`;
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(x, y, radius * 1.05, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-            
-            // Küçük detaylar
-            for (let i = 0; i < 300; i++) {
-                const x = Math.random() * 4096;
-                const y = Math.random() * 4096;
-                const radius = Math.random() * 40 + 5;
-                
-                ctx.fillStyle = `rgba(0, 0, 0, ${Math.random() * 0.4 + 0.3})`;
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Mor ışık lekeler (minimal)
-            for (let i = 0; i < 40; i++) {
-                const x = Math.random() * 4096;
-                const y = Math.random() * 4096;
-                const radius = Math.random() * 80 + 30;
-                
-                const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, radius);
-                glowGrad.addColorStop(0, 'rgba(138, 43, 226, 0.15)');
-                glowGrad.addColorStop(0.5, 'rgba(106, 13, 173, 0.08)');
-                glowGrad.addColorStop(1, 'transparent');
-                
-                ctx.fillStyle = glowGrad;
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            
-            // Noise pattern (gerçekçilik için)
-            for (let i = 0; i < 10000; i++) {
-                const x = Math.random() * 4096;
-                const y = Math.random() * 4096;
-                const alpha = Math.random() * 0.15;
-                
-                ctx.fillStyle = `rgba(138, 43, 226, ${alpha})`;
-                ctx.fillRect(x, y, 1, 1);
-            }
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-            
+            // Gerçek Ay texture'ını yükle
+            const textureLoader = new THREE.TextureLoader();
+            const moonTexture = textureLoader.load(
+                'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',
+                function() {
+                    console.log('Ay texture yüklendi!');
+                },
+                undefined,
+                function() {
+                    // Yüklenemezse mor-siyah texture
+                    createFallbackMoonTexture();
+                }
+            );
+
             const moonMaterial = new THREE.MeshPhongMaterial({
-                map: texture,
-                bumpMap: texture,
-                bumpScale: 0.3,
-                color: 0xaaaaaa,
+                map: moonTexture,
+                bumpMap: moonTexture,
+                bumpScale: 0.05,
+                color: 0xccccff,
                 emissive: 0x4b0082,
-                emissiveIntensity: 0.2,
-                shininess: 5,
-                specular: 0x6a0dad,
-                flatShading: false
+                emissiveIntensity: 0.15,
+                shininess: 3,
+                specular: 0x555555
             });
 
             moon = new THREE.Mesh(moonGeometry, moonMaterial);
-            moon.castShadow = true;
-            moon.receiveShadow = true;
             scene.add(moon);
 
-            // Çok hafif mor glow
-            const glowGeometry = new THREE.SphereGeometry(3.68, 64, 64);
+            // Hafif mor glow
+            const glowGeometry = new THREE.SphereGeometry(3.65, 64, 64);
             const glowMaterial = new THREE.MeshBasicMaterial({
-                color: 0x6a0dad,
+                color: 0x8a2be2,
                 transparent: true,
-                opacity: 0.12,
+                opacity: 0.1,
                 side: THREE.BackSide
             });
             const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
             moon.add(glowMesh);
         }
 
-        function createRealisticStars() {
+        function createFallbackMoonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 2048;
+            const ctx = canvas.getContext('2d');
+            
+            // Base mor-gri gradient
+            const baseGrad = ctx.createRadialGradient(1024, 1024, 200, 1024, 1024, 1024);
+            baseGrad.addColorStop(0, '#9999cc');
+            baseGrad.addColorStop(0.5, '#666699');
+            baseGrad.addColorStop(1, '#333366');
+            ctx.fillStyle = baseGrad;
+            ctx.fillRect(0, 0, 2048, 2048);
+            
+            // Basit kraterler
+            const craters = [];
+            for (let i = 0; i < 30; i++) {
+                let overlap = false;
+                let x, y, r;
+                let attempts = 0;
+                
+                do {
+                    x = Math.random() * 2048;
+                    y = Math.random() * 2048;
+                    r = Math.random() * 150 + 50;
+                    overlap = false;
+                    
+                    for (let crater of craters) {
+                        const dist = Math.sqrt((x - crater.x) ** 2 + (y - crater.y) ** 2);
+                        if (dist < r + crater.r) {
+                            overlap = true;
+                            break;
+                        }
+                    }
+                    attempts++;
+                } while (overlap && attempts < 100);
+                
+                if (!overlap) {
+                    craters.push({x, y, r});
+                    
+                    const craterGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
+                    craterGrad.addColorStop(0, '#1a1a33');
+                    craterGrad.addColorStop(0.7, '#333366');
+                    craterGrad.addColorStop(1, 'transparent');
+                    
+                    ctx.fillStyle = craterGrad;
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            moon.material.map = texture;
+            moon.material.bumpMap = texture;
+            moon.material.needsUpdate = true;
+        }
+
+        function createStars() {
             const starConfigs = [
-                { count: 1500, size: [0.5, 1.5], color: 0x8a2be2, opacity: [0.6, 1], range: 150 },
-                { count: 1200, size: [0.3, 1], color: 0xff00ff, opacity: [0.5, 0.9], range: 130 },
-                { count: 1000, size: [0.2, 0.8], color: 0x9370db, opacity: [0.4, 0.8], range: 110 },
-                { count: 800, size: [0.8, 2], color: 0xffffff, opacity: [0.7, 1], range: 140 }
+                { count: 1500, size: [0.5, 1.5], color: 0x8a2be2, range: 150 },
+                { count: 1200, size: [0.3, 1], color: 0xff00ff, range: 130 },
+                { count: 1000, size: [0.2, 0.8], color: 0x9370db, range: 110 }
             ];
 
-            starConfigs.forEach((config, layerIndex) => {
+            starConfigs.forEach((config, idx) => {
                 const positions = [];
                 const sizes = [];
-                const opacities = [];
 
                 for (let i = 0; i < config.count; i++) {
                     const theta = Math.random() * Math.PI * 2;
                     const phi = Math.random() * Math.PI;
                     const radius = 50 + Math.random() * config.range;
                     
-                    const x = radius * Math.sin(phi) * Math.cos(theta);
-                    const y = radius * Math.sin(phi) * Math.sin(theta);
-                    const z = radius * Math.cos(phi) - 30;
-                    
-                    positions.push(x, y, z);
+                    positions.push(
+                        radius * Math.sin(phi) * Math.cos(theta),
+                        radius * Math.sin(phi) * Math.sin(theta),
+                        radius * Math.cos(phi) - 30
+                    );
                     sizes.push(config.size[0] + Math.random() * (config.size[1] - config.size[0]));
-                    opacities.push(config.opacity[0] + Math.random() * (config.opacity[1] - config.opacity[0]));
                 }
 
                 const geometry = new THREE.BufferGeometry();
                 geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
                 geometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-                geometry.setAttribute('opacity', new THREE.Float32BufferAttribute(opacities, 1));
 
                 const material = new THREE.ShaderMaterial({
                     uniforms: {
@@ -416,141 +372,118 @@
                     },
                     vertexShader: `
                         attribute float size;
-                        attribute float opacity;
-                        varying float vOpacity;
                         uniform float time;
                         void main() {
-                            vOpacity = opacity;
                             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                            gl_PointSize = size * (300.0 / -mvPosition.z) * (0.8 + 0.2 * sin(time + position.x));
+                            gl_PointSize = size * (300.0 / -mvPosition.z) * (0.9 + 0.1 * sin(time + position.x));
                             gl_Position = projectionMatrix * mvPosition;
                         }
                     `,
                     fragmentShader: `
                         uniform vec3 color;
-                        varying float vOpacity;
                         void main() {
                             float dist = length(gl_PointCoord - vec2(0.5));
                             if (dist > 0.5) discard;
-                            float alpha = (1.0 - dist * 2.0) * vOpacity;
-                            gl_FragColor = vec4(color, alpha);
+                            gl_FragColor = vec4(color, (1.0 - dist * 2.0) * 0.8);
                         }
                     `,
                     transparent: true,
-                    blending: THREE.AdditiveBlending,
-                    depthWrite: false
+                    blending: THREE.AdditiveBlending
                 });
 
                 const starField = new THREE.Points(geometry, material);
-                starField.userData = {
-                    speed: 0.00005 * (layerIndex + 1),
-                    wobble: 0.0001 * (layerIndex + 1)
-                };
+                starField.userData = { speed: 0.00008 * (idx + 1) };
                 scene.add(starField);
                 stars.push(starField);
             });
         }
 
-        function create3DLettersUnified() {
-            const text = "ELİFİM";
-            const moonRadius = 3.5;
-            const orbitRadius = moonRadius + 0.25;
-            const letterWidth = 0.9; // Harf genişliği
-            const letterSpacing = 0.15; // ÇOK KÜÇÜK BOŞLUK (birleşik görünüm)
-            const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
-            const startAngle = -Math.atan(totalWidth / (2 * orbitRadius));
+        function createUnifiedText() {
+            // TEK PARÇA "ELİFİM" - Birleşik canvas texture
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
 
-            text.split('').forEach((char, i) => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
-                const ctx = canvas.getContext('2d');
+            // Neon gradient
+            const gradient = ctx.createLinearGradient(0, 0, 2048, 0);
+            gradient.addColorStop(0, '#ff00ff');
+            gradient.addColorStop(0.3, '#ff66ff');
+            gradient.addColorStop(0.5, '#ff99ff');
+            gradient.addColorStop(0.7, '#ff66ff');
+            gradient.addColorStop(1, '#8a2be2');
 
-                // Neon mor gradient
-                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-                gradient.addColorStop(0, '#ff00ff');
-                gradient.addColorStop(0.5, '#ff99ff');
-                gradient.addColorStop(1, '#8a2be2');
+            // Çok güçlü glow
+            ctx.shadowBlur = 80;
+            ctx.shadowColor = '#ff00ff';
+            
+            // BİRLEŞİK yazı - harfler arasında boşluk YOK
+            ctx.font = 'bold 350px Arial';
+            ctx.fillStyle = gradient;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Letter spacing'i canvas üzerinde kaldır
+            ctx.save();
+            ctx.scale(1.2, 1); // Genişlet
+            ctx.fillText('ELİFİM', 1024 / 1.2, 256);
+            ctx.restore();
 
-                ctx.shadowBlur = 45;
-                ctx.shadowColor = '#ff00ff';
-                ctx.font = 'bold 200px Arial';
-                ctx.fillStyle = gradient;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(char, 128, 128);
+            // İkinci glow katmanı
+            ctx.shadowBlur = 100;
+            ctx.shadowColor = '#8a2be2';
+            ctx.save();
+            ctx.scale(1.2, 1);
+            ctx.fillText('ELİFİM', 1024 / 1.2, 256);
+            ctx.restore();
 
-                const texture = new THREE.CanvasTexture(canvas);
-                
-                const geometry = new THREE.BoxGeometry(0.9, 1.2, 0.3);
-                const material = new THREE.MeshPhongMaterial({
-                    map: texture,
-                    transparent: true,
-                    opacity: 0,
-                    emissive: 0xff00ff,
-                    emissiveIntensity: 0.5,
-                    shininess: 100,
-                    side: THREE.DoubleSide
-                });
+            const texture = new THREE.CanvasTexture(canvas);
 
-                const letter = new THREE.Mesh(geometry, material);
-                
-                // Birleşik pozisyon hesaplama
-                const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
-                const angle = startAngle + Math.atan(offset / orbitRadius);
-                
-                letter.userData = {
-                    baseAngle: angle,
-                    orbitRadius: orbitRadius,
-                    index: i,
-                    targetOpacity: 0.95,
-                    appearDelay: i * 0.3
-                };
-                
-                scene.add(letter);
-                textLetters.push(letter);
+            // 3D TEXT MESH - ExtrudeGeometry benzeri düz
+            const geometry = new THREE.PlaneGeometry(14, 3.5);
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                opacity: 0.95,
+                side: THREE.DoubleSide,
+                blending: THREE.AdditiveBlending
             });
+
+            textMesh = new THREE.Mesh(geometry, material);
+            textMesh.userData = { angle: 0, radius: 7 };
+            
+            scene.add(textMesh);
         }
 
         function animate() {
             requestAnimationFrame(animate);
 
             const time = Date.now() * 0.001;
-            const elapsedTime = (Date.now() - animationStartTime) / 1000;
 
-            // Ay yavaş dönüyor
-            moon.rotation.y += 0.003;
+            // Ay dönüyor
+            moon.rotation.y += 0.002;
             moon.rotation.x = Math.sin(time * 0.15) * 0.02;
-            moon.position.y = Math.sin(time * 0.1) * 0.05;
 
-            // Harfler Ay ile senkron dönüyor
-            const orbitRotation = time * 0.3;
-
-            textLetters.forEach((letter, i) => {
-                // Sıra sıra ortaya çıkma
-                if (elapsedTime > letter.userData.appearDelay) {
-                    const appearProgress = Math.min((elapsedTime - letter.userData.appearDelay) / 1, 1);
-                    letter.material.opacity = appearProgress * letter.userData.targetOpacity;
-                    letter.scale.setScalar(0.5 + appearProgress * 0.5);
-                }
-
-                const angle = letter.userData.baseAngle - orbitRotation;
-                const radius = letter.userData.orbitRadius;
-                
-                letter.position.x = Math.cos(angle) * radius;
-                letter.position.z = Math.sin(angle) * radius;
-                letter.position.y = 0;
-                
-                letter.rotation.y = -angle + Math.PI / 2;
-                letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
-                
-                letter.material.emissiveIntensity = 0.4 + Math.sin(time * 3 + i * 0.5) * 0.2;
-            });
+            // "ELİFİM" SAĞDAN SOLA dönüyor (clockwise when viewed from above)
+            textMesh.userData.angle += 0.005; // POZİTİF = soldan sağa göründüğünde sağdan sola döner
+            
+            const angle = textMesh.userData.angle;
+            const radius = textMesh.userData.radius;
+            
+            // Yörünge hareketi
+            textMesh.position.x = Math.cos(angle) * radius;
+            textMesh.position.z = Math.sin(angle) * radius;
+            textMesh.position.y = Math.sin(time * 1.5) * 0.15;
+            
+            // Yazı kameraya bakıyor
+            textMesh.lookAt(camera.position);
+            
+            // Parlama
+            textMesh.material.opacity = 0.92 + Math.sin(time * 3) * 0.08;
 
             // Yıldızlar
             stars.forEach(starField => {
                 starField.rotation.y += starField.userData.speed;
-                starField.rotation.x += starField.userData.wobble * 0.5;
                 starField.material.uniforms.time.value = time;
             });
 
@@ -563,17 +496,22 @@
             renderer.render(scene, camera);
         }
 
-        function setupMusicControl() {
-            const musicButton = document.getElementById('musicButton');
+        function setupMusic() {
+            const btn = document.getElementById('musicButton');
+            const audio = document.getElementById('bgMusic');
 
-            musicButton.addEventListener('click', function() {
+            btn.addEventListener('click', function() {
                 if (!musicPlaying) {
-                    playPianoMelody();
-                    musicPlaying = true;
-                    this.textContent = '🎵 Müzik Çalıyor';
-                    this.classList.add('playing');
+                    audio.play().then(() => {
+                        musicPlaying = true;
+                        this.textContent = '🎵 Müzik Çalıyor';
+                        this.classList.add('playing');
+                    }).catch(err => {
+                        console.log('Müzik hatası:', err);
+                        alert('Müzik yüklenemedi. İnternet bağlantınızı kontrol edin.');
+                    });
                 } else {
-                    stopPianoMelody();
+                    audio.pause();
                     musicPlaying = false;
                     this.textContent = '💜 Müziği Aç';
                     this.classList.remove('playing');
@@ -581,70 +519,8 @@
             });
         }
 
-        function playPianoMelody() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            let currentTime = audioContext.currentTime;
-            
-            // Melodiyi çal ve döngüye al
-            function playLoop() {
-                if (!musicPlaying) return;
-                
-                pianoMelody.forEach((noteData, index) => {
-                    setTimeout(() => {
-                        if (musicPlaying) {
-                            playPianoNote(noteData.note, noteData.duration);
-                        }
-                    }, index * 1500);
-                });
-
-                // Melodi bitince tekrar başla
-                setTimeout(() => {
-                    if (musicPlaying) playLoop();
-                }, pianoMelody.length * 1500);
-            }
-
-            playLoop();
-        }
-
-        function playPianoNote(frequency, duration) {
-            const osc = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            // Piano benzeri dalga
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
-            
-            // ADSR envelope (piano attack/decay)
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.15, audioContext.currentTime + 0.02); // Attack
-            gainNode.gain.exponentialRampToValueAtTime(0.08, audioContext.currentTime + 0.2); // Decay
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration); // Release
-            
-            osc.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            osc.start(audioContext.currentTime);
-            osc.stop(audioContext.currentTime + duration);
-            
-            pianoNotes.push({ osc, gainNode });
-        }
-
-        function stopPianoMelody() {
-            pianoNotes.forEach(note => {
-                try {
-                    note.gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-                    note.osc.stop();
-                } catch (e) {}
-            });
-            pianoNotes = [];
-        }
-
         function onPointerStart(e) {
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            touchStartX = clientX;
+            touchStartX = e.touches ? e.touches[0].clientX : e.clientX;
         }
 
         function onPointerMove(e) {
@@ -673,11 +549,8 @@
                 particle.className = 'particle';
                 particle.innerHTML = particles[Math.floor(Math.random() * particles.length)];
                 
-                const offsetX = (Math.random() - 0.5) * 80;
-                const offsetY = (Math.random() - 0.5) * 80;
-                
-                particle.style.left = (clientX + offsetX) + 'px';
-                particle.style.top = (clientY + offsetY) + 'px';
+                particle.style.left = (clientX + (Math.random() - 0.5) * 80) + 'px';
+                particle.style.top = (clientY + (Math.random() - 0.5) * 80) + 'px';
                 
                 document.body.appendChild(particle);
                 setTimeout(() => particle.remove(), 2500);
