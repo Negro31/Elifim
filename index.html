@@ -506,6 +506,99 @@
                         musicPlaying = true;
                         this.textContent = '🎵 Müzik Çalıyor';
                         this.classList.add('playing');
+                        console.log('✓ Müzik başlatıldı');
+                    }).catch(err => {
+                        console.error('⚠ Müzik hatası:', err);
+                        alert('Müzik yüklenemedi. Lütfen sayfayı yenileyin veya internet bağlantınızı kontrol edin.');
+                    });
+                } else {
+                    audio.pause();
+                    musicPlaying = false;
+                    this.textContent = '💜 Müziği Aç';
+                    this.classList.remove('playing');
+                    console.log('⏸ Müzik durduruldu');
+                }
+            });
+
+            // Müzik yüklendiğinde bildir
+            audio.addEventListener('loadeddata', () => {
+                console.log('✓ Müzik dosyası yüklendi ve hazır');
+            });
+
+            audio.addEventListener('error', (e) => {
+                console.error('⚠ Müzik yükleme hatası:', e);
+            });
+        }
+
+        /**
+         * Pointer başlangıç
+         */
+        function onPointerStart(e) {
+            touchStartX = e.touches ? e.touches[0].clientX : e.clientX;
+        }
+
+        /**
+         * Pointer hareket
+         */
+        function onPointerMove(e) {
+            if (e.type === 'mousemove' && e.buttons === 0) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const deltaX = clientX - touchStartX;
+            
+            targetRotationY += deltaX * 0.005;
+            touchStartX = clientX;
+        }
+
+        /**
+         * Pencere yeniden boyutlandırma
+         */
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            console.log('✓ Ekran boyutu güncellendi');
+        }
+
+        /**
+         * Partikül efekti
+         */
+        function createParticles(event) {
+            const particles = ['💜', '💗', '💖', '✨', '🌟', '💫', '⭐', '🌙'];
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.innerHTML = particles[Math.floor(Math.random() * particles.length)];
+                
+                const offsetX = (Math.random() - 0.5) * 100;
+                const offsetY = (Math.random() - 0.5) * 100;
+                
+                particle.style.left = (clientX + offsetX) + 'px';
+                particle.style.top = (clientY + offsetY) + 'px';
+                particle.style.fontSize = (20 + Math.random() * 15) + 'px';
+                
+                document.body.appendChild(particle);
+                setTimeout(() => particle.remove(), 2500);
+            }
+        }
+
+        /**
+         * Uygulamayı başlat
+         */
+        console.log('🚀 Romantik Uzay Sitesi başlatılıyor...');
+        console.log('💜 Elif için özel olarak hazırlandı');
+        init();
+        console.log('✓ Site başarıyla yüklendi!');
+    </script>
+</body>
+</html>().then(() => {
+                        musicPlaying = true;
+                        this.textContent = '🎵 Müzik Çalıyor';
+                        this.classList.add('playing');
                     }).catch(err => {
                         console.log('Müzik hatası:', err);
                         alert('Müzik yüklenemedi. İnternet bağlantınızı kontrol edin.');
@@ -560,4 +653,4 @@
         init();
     </script>
 </body>
-</html>
+            </html>
