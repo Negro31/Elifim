@@ -28,6 +28,81 @@
             touch-action: none;
         }
 
+        /* Sayaç - Köşe */
+        .counter-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(138, 43, 226, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(138, 43, 226, 0.3);
+            border-radius: 15px;
+            padding: 15px 25px;
+            z-index: 100;
+            box-shadow: 
+                0 0 20px rgba(138, 43, 226, 0.4),
+                inset 0 0 20px rgba(138, 43, 226, 0.1);
+            animation: counter-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes counter-glow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 20px rgba(138, 43, 226, 0.4),
+                    inset 0 0 20px rgba(138, 43, 226, 0.1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 30px rgba(138, 43, 226, 0.6),
+                    inset 0 0 30px rgba(138, 43, 226, 0.2);
+            }
+        }
+
+        .counter-title {
+            color: #ff99ff;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #ff00ff;
+            letter-spacing: 1px;
+        }
+
+        .counter-value {
+            color: #fff;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 
+                0 0 10px #ff00ff,
+                0 0 20px #8a2be2;
+            font-family: 'Courier New', monospace;
+        }
+
+        .counter-label {
+            color: #ff99ff;
+            font-size: 11px;
+            text-align: center;
+            margin-top: 3px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .counter-container {
+                top: 10px;
+                right: 10px;
+                padding: 10px 15px;
+            }
+            .counter-title {
+                font-size: 10px;
+            }
+            .counter-value {
+                font-size: 20px;
+            }
+            .counter-label {
+                font-size: 9px;
+            }
+        }
+
         .bottom-text {
             position: fixed;
             bottom: 80px;
@@ -143,6 +218,17 @@
             }
         }
 
+        .shooting-star {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 50;
+            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+        }
+
         .ambient-glow {
             position: fixed;
             width: 100%;
@@ -169,6 +255,13 @@
     
     <div class="ambient-glow"></div>
     
+    <!-- Sayaç -->
+    <div class="counter-container">
+        <div class="counter-title">Birlikte</div>
+        <div class="counter-value" id="dayCounter">8</div>
+        <div class="counter-label">Gün 💜</div>
+    </div>
+    
     <div class="bottom-text">
         Sonsuza kadar seninle, Elif'im 🌙
     </div>
@@ -182,73 +275,119 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
     <script>
-        let scene, camera, renderer, moon, textMesh;
+        /**
+         * PROFESYONEL ROMANTIC SPACE SITE
+         * Three.js ile Ay ve 3D "ELİFİM" yazısı
+         * Kayan yıldızlar ve sayaç sistemi
+         */
+
+        // Global değişkenler
+        let scene, camera, renderer, moon, textGroup;
         let touchStartX = 0;
         let targetRotationY = 0, currentRotationY = 0;
         let musicPlaying = false;
         let stars = [];
+        let shootingStars = [];
 
+        // Başlangıç tarihi (8 gün önce)
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 8);
+
+        /**
+         * Sahneyi başlat
+         */
         function init() {
+            // Sahne oluştur
             scene = new THREE.Scene();
             
+            // Kamera ayarları
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.set(0, 0, 15);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            // Renderer ayarları
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: false,
+                powerPreference: "high-performance"
+            });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setClearColor(0x000000);
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Mor ışıklandırma
-            const ambientLight = new THREE.AmbientLight(0x6a0dad, 0.6);
-            scene.add(ambientLight);
+            // Işıklandırma sistemi
+            setupLighting();
 
-            const mainLight = new THREE.PointLight(0x8a2be2, 3, 100);
-            mainLight.position.set(10, 10, 15);
-            scene.add(mainLight);
-
-            const spotLight = new THREE.SpotLight(0x9370db, 2);
-            spotLight.position.set(-15, 15, 20);
-            scene.add(spotLight);
-
-            // Gerçekçi Ay (CDN texture ile)
+            // Gerçekçi Ay oluştur
             createRealisticMoon();
 
-            // Yıldızlar
-            createStars();
+            // Belirgin yıldızlar
+            createEnhancedStars();
 
-            // BİRLEŞİK "ELİFİM" yazısı - TEK PARÇA
-            createUnifiedText();
+            // 3D "ELİFİM" yazısı - Ay'a yapışık, yerçekimi kanunlarına uygun
+            create3DTextOnMoon();
 
             // Event listeners
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('click', createParticles);
-            
             renderer.domElement.addEventListener('mousedown', onPointerStart);
             renderer.domElement.addEventListener('mousemove', onPointerMove);
-            
             renderer.domElement.addEventListener('touchstart', onPointerStart);
             renderer.domElement.addEventListener('touchmove', onPointerMove);
 
+            // Müzik kontrolü
             setupMusic();
 
+            // Sayaç güncellemesi
+            updateCounter();
+            setInterval(updateCounter, 1000);
+
+            // Kayan yıldız oluştur
+            setInterval(createShootingStar, 3000);
+
+            // Animasyon başlat
             animate();
         }
 
+        /**
+         * Işıklandırma sistemi
+         */
+        function setupLighting() {
+            const ambientLight = new THREE.AmbientLight(0x6a0dad, 0.6);
+            scene.add(ambientLight);
+
+            const mainLight = new THREE.PointLight(0x8a2be2, 3.5, 100);
+            mainLight.position.set(10, 10, 15);
+            mainLight.castShadow = true;
+            scene.add(mainLight);
+
+            const spotLight = new THREE.SpotLight(0x9370db, 2.5);
+            spotLight.position.set(-15, 15, 20);
+            spotLight.angle = Math.PI / 3;
+            scene.add(spotLight);
+
+            const fillLight = new THREE.PointLight(0x4b0082, 2, 80);
+            fillLight.position.set(12, -8, 10);
+            scene.add(fillLight);
+        }
+
+        /**
+         * Gerçekçi Ay modeli
+         */
         function createRealisticMoon() {
             const moonGeometry = new THREE.SphereGeometry(3.5, 128, 128);
             
-            // Gerçek Ay texture'ını yükle
             const textureLoader = new THREE.TextureLoader();
             const moonTexture = textureLoader.load(
                 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/textures/planets/moon_1024.jpg',
                 function() {
-                    console.log('Ay texture yüklendi!');
+                    console.log('✓ Ay texture başarıyla yüklendi');
                 },
                 undefined,
                 function() {
-                    // Yüklenemezse mor-siyah texture
+                    console.warn('⚠ Texture yüklenemedi, yedek texture oluşturuluyor');
                     createFallbackMoonTexture();
                 }
             );
@@ -265,6 +404,8 @@
             });
 
             moon = new THREE.Mesh(moonGeometry, moonMaterial);
+            moon.castShadow = true;
+            moon.receiveShadow = true;
             scene.add(moon);
 
             // Hafif mor glow
@@ -279,13 +420,16 @@
             moon.add(glowMesh);
         }
 
+        /**
+         * Yedek Ay texture'ı
+         */
         function createFallbackMoonTexture() {
             const canvas = document.createElement('canvas');
             canvas.width = 2048;
             canvas.height = 2048;
             const ctx = canvas.getContext('2d');
             
-            // Base mor-gri gradient
+            // Base gradient
             const baseGrad = ctx.createRadialGradient(1024, 1024, 200, 1024, 1024, 1024);
             baseGrad.addColorStop(0, '#9999cc');
             baseGrad.addColorStop(0.5, '#666699');
@@ -293,12 +437,10 @@
             ctx.fillStyle = baseGrad;
             ctx.fillRect(0, 0, 2048, 2048);
             
-            // Basit kraterler
+            // Kraterler (çakışma kontrolü ile)
             const craters = [];
             for (let i = 0; i < 30; i++) {
-                let overlap = false;
-                let x, y, r;
-                let attempts = 0;
+                let overlap, x, y, r, attempts = 0;
                 
                 do {
                     x = Math.random() * 2048;
@@ -308,7 +450,7 @@
                     
                     for (let crater of craters) {
                         const dist = Math.sqrt((x - crater.x) ** 2 + (y - crater.y) ** 2);
-                        if (dist < r + crater.r) {
+                        if (dist < r + crater.r + 20) {
                             overlap = true;
                             break;
                         }
@@ -337,11 +479,15 @@
             moon.material.needsUpdate = true;
         }
 
-        function createStars() {
+        /**
+         * Belirgin yıldızlar
+         */
+        function createEnhancedStars() {
             const starConfigs = [
-                { count: 1500, size: [0.5, 1.5], color: 0x8a2be2, range: 150 },
-                { count: 1200, size: [0.3, 1], color: 0xff00ff, range: 130 },
-                { count: 1000, size: [0.2, 0.8], color: 0x9370db, range: 110 }
+                { count: 2000, size: [0.8, 2.5], color: 0x8a2be2, range: 150 },
+                { count: 1500, size: [0.5, 2.0], color: 0xff00ff, range: 130 },
+                { count: 1200, size: [0.4, 1.5], color: 0x9370db, range: 110 },
+                { count: 800, size: [1.0, 3.0], color: 0xffffff, range: 140 }
             ];
 
             starConfigs.forEach((config, idx) => {
@@ -375,7 +521,8 @@
                         uniform float time;
                         void main() {
                             vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                            gl_PointSize = size * (300.0 / -mvPosition.z) * (0.9 + 0.1 * sin(time + position.x));
+                            float twinkle = 0.85 + 0.15 * sin(time * 2.0 + position.x * 10.0);
+                            gl_PointSize = size * (400.0 / -mvPosition.z) * twinkle;
                             gl_Position = projectionMatrix * mvPosition;
                         }
                     `,
@@ -384,11 +531,13 @@
                         void main() {
                             float dist = length(gl_PointCoord - vec2(0.5));
                             if (dist > 0.5) discard;
-                            gl_FragColor = vec4(color, (1.0 - dist * 2.0) * 0.8);
+                            float alpha = pow((1.0 - dist * 2.0), 2.0);
+                            gl_FragColor = vec4(color, alpha);
                         }
                     `,
                     transparent: true,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.AdditiveBlending,
+                    depthWrite: false
                 });
 
                 const starField = new THREE.Points(geometry, material);
@@ -398,63 +547,126 @@
             });
         }
 
-        function createUnifiedText() {
-            // TEK PARÇA "ELİFİM" - Birleşik canvas texture
-            const canvas = document.createElement('canvas');
-            canvas.width = 2048;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
+        /**
+         * 3D "ELİFİM" yazısı - Verdiğiniz koddan alınan mantık
+         */
+        function create3DTextOnMoon() {
+            const text = "ELİFİM";
+            const moonRadius = 3.5;
+            const orbitRadius = moonRadius + 0.25; // Ay'a yapışık
+            const letterWidth = 0.9;
+            const letterSpacing = 0.05; // Birleşik görünüm için minimal boşluk
+            const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
+            const startAngle = -Math.atan(totalWidth / (2 * orbitRadius));
 
-            // Neon gradient
-            const gradient = ctx.createLinearGradient(0, 0, 2048, 0);
-            gradient.addColorStop(0, '#ff00ff');
-            gradient.addColorStop(0.3, '#ff66ff');
-            gradient.addColorStop(0.5, '#ff99ff');
-            gradient.addColorStop(0.7, '#ff66ff');
-            gradient.addColorStop(1, '#8a2be2');
+            textLetters = []; // Global array'e ekle
 
-            // Çok güçlü glow
-            ctx.shadowBlur = 80;
-            ctx.shadowColor = '#ff00ff';
-            
-            // BİRLEŞİK yazı - harfler arasında boşluk YOK
-            ctx.font = 'bold 350px Arial';
-            ctx.fillStyle = gradient;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            
-            // Letter spacing'i canvas üzerinde kaldır
-            ctx.save();
-            ctx.scale(1.2, 1); // Genişlet
-            ctx.fillText('ELİFİM', 1024 / 1.2, 256);
-            ctx.restore();
+            text.split('').forEach((char, i) => {
+                // Canvas texture oluştur
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
 
-            // İkinci glow katmanı
-            ctx.shadowBlur = 100;
-            ctx.shadowColor = '#8a2be2';
-            ctx.save();
-            ctx.scale(1.2, 1);
-            ctx.fillText('ELİFİM', 1024 / 1.2, 256);
-            ctx.restore();
+                // Neon gradient
+                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+                gradient.addColorStop(0, '#ff00ff');
+                gradient.addColorStop(0.5, '#ff99ff');
+                gradient.addColorStop(1, '#8a2be2');
 
-            const texture = new THREE.CanvasTexture(canvas);
+                ctx.shadowBlur = 45;
+                ctx.shadowColor = '#ff00ff';
+                ctx.font = 'bold 200px Arial';
+                ctx.fillStyle = gradient;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(char, 128, 128);
 
-            // 3D TEXT MESH - ExtrudeGeometry benzeri düz
-            const geometry = new THREE.PlaneGeometry(14, 3.5);
-            const material = new THREE.MeshBasicMaterial({
-                map: texture,
-                transparent: true,
-                opacity: 0.95,
-                side: THREE.DoubleSide,
-                blending: THREE.AdditiveBlending
+                const texture = new THREE.CanvasTexture(canvas);
+                
+                // 3D Box geometry (CAM DEĞİL - sadece temiz 3D)
+                const geometry = new THREE.BoxGeometry(0.9, 1.2, 0.4); // Daha belirgin derinlik
+                const material = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 0.95, // Başlangıçta görünür
+                    emissive: 0xff00ff,
+                    emissiveIntensity: 0.5,
+                    shininess: 100,
+                    side: THREE.DoubleSide
+                });
+
+                const letter = new THREE.Mesh(geometry, material);
+                letter.castShadow = true;
+                
+                // Pozisyon hesaplama - VERDİĞİNİZ KODDAN
+                const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
+                const angle = startAngle + Math.atan(offset / orbitRadius);
+                
+                letter.userData = {
+                    baseAngle: angle,
+                    orbitRadius: orbitRadius,
+                    index: i,
+                    targetOpacity: 0.95
+                };
+                
+                scene.add(letter);
+                textLetters.push(letter);
             });
-
-            textMesh = new THREE.Mesh(geometry, material);
-            textMesh.userData = { angle: 0, radius: 7 };
-            
-            scene.add(textMesh);
         }
 
+        /**
+         * Kayan yıldız oluştur
+         */
+        function createShootingStar() {
+            const star = document.createElement('div');
+            star.className = 'shooting-star';
+            
+            // Rastgele başlangıç pozisyonu (üst kenardan)
+            const startX = Math.random() * window.innerWidth;
+            const startY = -50;
+            const endX = startX + (Math.random() * 400 + 200);
+            const endY = Math.random() * window.innerHeight;
+            
+            star.style.left = startX + 'px';
+            star.style.top = startY + 'px';
+            
+            // Kuyruk efekti
+            star.style.boxShadow = `
+                0 0 10px 2px rgba(255, 255, 255, 0.8),
+                -50px -50px 40px 10px rgba(138, 43, 226, 0.4)
+            `;
+            
+            document.body.appendChild(star);
+            
+            // Animasyon
+            const duration = 1500 + Math.random() * 1000;
+            const startTime = Date.now();
+            
+            function animateStar() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                
+                if (progress < 1) {
+                    const currentX = startX + (endX - startX) * progress;
+                    const currentY = startY + (endY - startY) * progress;
+                    
+                    star.style.left = currentX + 'px';
+                    star.style.top = currentY + 'px';
+                    star.style.opacity = 1 - progress;
+                    
+                    requestAnimationFrame(animateStar);
+                } else {
+                    star.remove();
+                }
+            }
+            
+            animateStar();
+        }
+
+        /**
+         * Ana animasyon döngüsü
+         */
         function animate() {
             requestAnimationFrame(animate);
 
@@ -463,23 +675,28 @@
             // Ay dönüyor
             moon.rotation.y += 0.002;
             moon.rotation.x = Math.sin(time * 0.15) * 0.02;
+            moon.position.y = Math.sin(time * 0.1) * 0.05;
 
-            // "ELİFİM" SAĞDAN SOLA dönüyor (clockwise when viewed from above)
-            textMesh.userData.angle += 0.005; // POZİTİF = soldan sağa göründüğünde sağdan sola döner
-            
-            const angle = textMesh.userData.angle;
-            const radius = textMesh.userData.radius;
-            
-            // Yörünge hareketi
-            textMesh.position.x = Math.cos(angle) * radius;
-            textMesh.position.z = Math.sin(angle) * radius;
-            textMesh.position.y = Math.sin(time * 1.5) * 0.15;
-            
-            // Yazı kameraya bakıyor
-            textMesh.lookAt(camera.position);
-            
-            // Parlama
-            textMesh.material.opacity = 0.92 + Math.sin(time * 3) * 0.08;
+            // "ELİFİM" VERDİĞİNİZ KODDAN - Ay'a yapışık dönüş
+            const orbitRotation = time * 0.3;
+
+            textLetters.forEach((letter, i) => {
+                // VERDİĞİNİZ KODDAK İ MANTIK
+                const angle = letter.userData.baseAngle - orbitRotation; // Negatif = sağdan sola
+                const radius = letter.userData.orbitRadius;
+                
+                // Orbital pozisyon
+                letter.position.x = Math.cos(angle) * radius;
+                letter.position.z = Math.sin(angle) * radius;
+                letter.position.y = 0;
+                
+                // Teğet rotasyon (Ay'a yapışık)
+                letter.rotation.y = -angle + Math.PI / 2;
+                letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
+                
+                // Parlama efekti
+                letter.material.emissiveIntensity = 0.4 + Math.sin(time * 3 + i * 0.5) * 0.2;
+            });
 
             // Yıldızlar
             stars.forEach(starField => {
@@ -496,6 +713,19 @@
             renderer.render(scene, camera);
         }
 
+        /**
+         * Sayaç güncelleme
+         */
+        function updateCounter() {
+            const now = new Date();
+            const diffTime = Math.abs(now - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            document.getElementById('dayCounter').textContent = diffDays;
+        }
+
+        /**
+         * Müzik kontrolü
+         */
         function setupMusic() {
             const btn = document.getElementById('musicButton');
             const audio = document.getElementById('bgMusic');
@@ -595,62 +825,4 @@
         console.log('✓ Site başarıyla yüklendi!');
     </script>
 </body>
-</html>().then(() => {
-                        musicPlaying = true;
-                        this.textContent = '🎵 Müzik Çalıyor';
-                        this.classList.add('playing');
-                    }).catch(err => {
-                        console.log('Müzik hatası:', err);
-                        alert('Müzik yüklenemedi. İnternet bağlantınızı kontrol edin.');
-                    });
-                } else {
-                    audio.pause();
-                    musicPlaying = false;
-                    this.textContent = '💜 Müziği Aç';
-                    this.classList.remove('playing');
-                }
-            });
-        }
-
-        function onPointerStart(e) {
-            touchStartX = e.touches ? e.touches[0].clientX : e.clientX;
-        }
-
-        function onPointerMove(e) {
-            if (e.type === 'mousemove' && e.buttons === 0) return;
-            
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const deltaX = clientX - touchStartX;
-            
-            targetRotationY += deltaX * 0.005;
-            touchStartX = clientX;
-        }
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        function createParticles(event) {
-            const particles = ['💜', '💗', '💖', '✨', '🌟', '💫', '⭐'];
-            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-            
-            for (let i = 0; i < 8; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.innerHTML = particles[Math.floor(Math.random() * particles.length)];
-                
-                particle.style.left = (clientX + (Math.random() - 0.5) * 80) + 'px';
-                particle.style.top = (clientY + (Math.random() - 0.5) * 80) + 'px';
-                
-                document.body.appendChild(particle);
-                setTimeout(() => particle.remove(), 2500);
-            }
-        }
-
-        init();
-    </script>
-</body>
-            </html>
+</html>
