@@ -279,9 +279,9 @@
     <script>
         /**
          * ELİF İÇİN ÖZEL 1. AY DÖNÜMÜ SİTESİ 💜🌙
-         * GERÇEK 3D YAZIYA DÖNÜLDÜ
-         * "İ" HARFİ "I" İLE DEĞİŞTİRİLDİ
-         * YAZI AYDAN BAĞIMSIZ DÖNÜYOR
+         * GERÇEK 3D YAZIYA DÖNÜLDÜ, "ELIFIM" YAZDI
+         * HARFLER AYDAN BAĞIMSIZ, DAHA YAKIN VE SIKI
+         * UZAY HAFİF MORUMSU BİR HAVA ALDI
          * SAYAÇ 30 GÜNE AYARLANDI
          */
 
@@ -312,7 +312,8 @@
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.setClearColor(0x000000);
+            // 🔥 YENİ: Uzay arka plan rengi hafif morumsu yapıldı
+            renderer.setClearColor(0x05000A); 
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -343,10 +344,10 @@
          * Işıklandırma sistemi
          */
         function setupLighting() {
-            const ambientLight = new THREE.AmbientLight(0x6a0dad, 0.6);
+            // 🔥 YENİ: Ambient ışık biraz daha mor yoğunlaştırıldı
+            const ambientLight = new THREE.AmbientLight(0x7a0da7, 0.7);
             scene.add(ambientLight);
 
-            // 🔥 IŞIK ARTIRILDI (DAHA BELİRGİN HARFLER İÇİN)
             const mainLight = new THREE.PointLight(0x8a2be2, 4.0, 100);
             mainLight.position.set(10, 10, 15);
             mainLight.castShadow = true;
@@ -366,7 +367,6 @@
          * Gerçekçi Ay modeli
          */
         function createRealisticMoon() {
-            // Ay'ın boyutu biraz küçültüldü ki harfler öne çıksın
             const moonGeometry = new THREE.SphereGeometry(3.0, 128, 128); 
             const textureLoader = new THREE.TextureLoader();
             const moonTexture = textureLoader.load(
@@ -395,7 +395,6 @@
             moon.receiveShadow = true;
             scene.add(moon);
 
-            // Glow da Ay ile birlikte küçültüldü
             const glowGeometry = new THREE.SphereGeometry(3.15, 64, 64);
             const glowMaterial = new THREE.MeshBasicMaterial({
                 color: 0x8a2be2,
@@ -525,20 +524,20 @@
 
         /**
          * ✨ 3D "ELIFIM" YAZISI (GÜNCELLENDİ)
-         * "İ" -> "I" olarak değiştirildi.
-         * Yazı artık AY'DAN BAĞIMSIZ dönüyor.
-         * Yazı daha BELİRGİN (Ay'dan uzak ve daha parlak)
+         * "ELIFIM" olarak düzeltildi.
+         * Harfler Ay'a daha yakın ve birbirine daha sıkı.
          */
         function create3DTextOnMoon() {
-            // 🔥 YENİ: "İ" harfi "I" olarak değiştirildi
+            // 🔥 YENİ: Metin "ELIFIM" olarak düzeltildi
             const text = "ELIFIM";
-            const moonRadius = 3.0; // Küçültülmüş Ay yarıçapı
+            const moonRadius = 3.0; 
             
-            // 🔥 YENİ: Harfler Aydan daha uzakta (daha belirgin)
-            const orbitRadius = moonRadius + 1.5; 
+            // 🔥 YENİ: Harfler Ay'a daha yakın
+            const orbitRadius = moonRadius + 0.8; 
             
+            // 🔥 YENİ: Harfler arası boşluk azaltıldı
             const letterWidth = 1.1; 
-            const letterSpacing = 0.25; 
+            const letterSpacing = 0.15; 
             const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
             const startAngle = -Math.atan(totalWidth / (2 * orbitRadius));
 
@@ -548,11 +547,10 @@
             
             loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/fonts/helvetiker_bold.typeface.json', function ( font ) {
                 
-                // 🔥 YENİ: Daha parlak malzeme
                 const textMaterial = new THREE.MeshPhongMaterial({
                     color: 0xff00ff,
                     emissive: 0x8a2be2,
-                    emissiveIntensity: 0.8, // Parlaklık artırıldı
+                    emissiveIntensity: 0.8,
                     specular: 0xffffff,
                     shininess: 40,
                     flatShading: true
@@ -579,18 +577,15 @@
                     const letter = new THREE.Mesh( geometry, textMaterial );
                     letter.castShadow = true;
                     
-                    // Pozisyon hesaplama
                     const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
                     const angle = startAngle + Math.atan(offset / orbitRadius);
                     
-                    // 🔥 YENİ: Bağımsız dönüş için veri saklama
                     letter.userData = {
                         baseAngle: angle,
                         orbitRadius: orbitRadius,
                         index: i
                     };
                     
-                    // 🔥 YENİ: Harfi ANA SAHNEYE ekle (moon.add değil!)
                     scene.add(letter);
                     textLetters.push(letter);
                 });
@@ -651,38 +646,31 @@
 
             const time = Date.now() * 0.001;
 
-            // Ay kendi ekseninde dönüyor
             moon.rotation.y += 0.004;
             moon.rotation.x = Math.sin(time * 0.15) * 0.02;
             moon.position.y = Math.sin(time * 0.1) * 0.05;
 
-            // 🔥 YENİ: Harfler Ay'dan BAĞIMSIZ dönüyor
-            const orbitRotation = time * 0.3; // Harflerin dönüş hızı
+            const orbitRotation = time * 0.3;
 
             textLetters.forEach((letter, i) => {
                 const angle = letter.userData.baseAngle - orbitRotation;
                 const radius = letter.userData.orbitRadius;
                 
-                // Orbital pozisyon
                 letter.position.x = Math.cos(angle) * radius;
                 letter.position.z = Math.sin(angle) * radius;
                 letter.position.y = 0; 
                 
-                // Teğet rotasyon
                 letter.rotation.y = -angle + Math.PI / 2;
                 
-                // Hafif salınım ve parlama
                 letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
                 letter.material.emissiveIntensity = 0.5 + Math.sin(time * 3 + i * 0.5) * 0.3;
             });
 
-            // Yıldızlar
             stars.forEach(starField => {
                 starField.rotation.y += starField.userData.speed;
                 starField.material.uniforms.time.value = time;
             });
 
-            // Kamera
             currentRotationY += (targetRotationY - currentRotationY) * 0.05;
             camera.position.x = Math.sin(currentRotationY) * 15;
             camera.position.z = Math.cos(currentRotationY) * 15;
@@ -801,7 +789,7 @@
         /**
          * Uygulamayı başlat
          */
-        console.log('🚀 Romantik Uzay Sitesi (v4 - Gerçek 3D + Bağımsız Dönüş) başlatılıyor...');
+        console.log('🚀 Romantik Uzay Sitesi (v5 - ELIFIM Düzeltmesi) başlatılıyor...');
         console.log('💜 Elif için özel olarak hazırlandı');
         init();
         console.log('✓ Site başarıyla yüklendi!');
