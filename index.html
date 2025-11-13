@@ -279,9 +279,9 @@
     <script>
         /**
          * ELİF İÇİN ÖZEL 1. AY DÖNÜMÜ SİTESİ 💜🌙
-         * GERÇEK 3D YAZIYA DÖNÜLDÜ, "ELIFIM" YAZDI
-         * HARFLER AYDAN BAĞIMSIZ, DAHA YAKIN VE SIKI
-         * UZAY HAFİF MORUMSU BİR HAVA ALDI
+         * GERÇEK 3D YAZIYA DÖNÜLDÜ, "MIFILE" YAZDI
+         * HARFLER AYDAN BAĞIMSIZ, DAHA YAKIN VE SIKI, DAHA PARLAK
+         * UZAY DAHA MORUMSU BİR HAVA ALDI
          * SAYAÇ 30 GÜNE AYARLANDI
          */
 
@@ -312,8 +312,8 @@
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            // 🔥 YENİ: Uzay arka plan rengi hafif morumsu yapıldı
-            renderer.setClearColor(0x05000A); 
+            // 🔥 YENİ: Uzay arka plan rengi daha morumsu yapıldı
+            renderer.setClearColor(0x0A0015); 
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
@@ -322,7 +322,7 @@
             createRealisticMoon();
             createEnhancedStars();
 
-            // ✨ 3D "ELIFIM" yazısı - GERÇEK 3D GEOMETRİ KULLANILARAK
+            // ✨ 3D "MIFILE" yazısı - GERÇEK 3D GEOMETRİ KULLANILARAK
             create3DTextOnMoon();
 
             window.addEventListener('resize', onWindowResize);
@@ -344,7 +344,7 @@
          * Işıklandırma sistemi
          */
         function setupLighting() {
-            // 🔥 YENİ: Ambient ışık biraz daha mor yoğunlaştırıldı
+            // Ambient ışık biraz daha mor yoğunlaştırıldı
             const ambientLight = new THREE.AmbientLight(0x7a0da7, 0.7);
             scene.add(ambientLight);
 
@@ -407,66 +407,13 @@
         }
 
         /**
-         * Yedek Ay texture'ı
-         */
-        function createFallbackMoonTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 2048;
-            canvas.height = 2048;
-            const ctx = canvas.getContext('2d');
-            
-            const baseGrad = ctx.createRadialGradient(1024, 1024, 200, 1024, 1024, 1024);
-            baseGrad.addColorStop(0, '#9999cc');
-            baseGrad.addColorStop(0.5, '#666699');
-            baseGrad.addColorStop(1, '#333366');
-            ctx.fillStyle = baseGrad;
-            ctx.fillRect(0, 0, 2048, 2048);
-            
-            const craters = [];
-            for (let i = 0; i < 30; i++) {
-                let overlap, x, y, r, attempts = 0;
-                do {
-                    x = Math.random() * 2048;
-                    y = Math.random() * 2048;
-                    r = Math.random() * 150 + 50;
-                    overlap = false;
-                    for (let crater of craters) {
-                        const dist = Math.sqrt((x - crater.x) ** 2 + (y - crater.y) ** 2);
-                        if (dist < r + crater.r + 20) {
-                            overlap = true;
-                            break;
-                        }
-                    }
-                    attempts++;
-                } while (overlap && attempts < 100);
-                
-                if (!overlap) {
-                    craters.push({x, y, r});
-                    const craterGrad = ctx.createRadialGradient(x, y, 0, x, y, r);
-                    craterGrad.addColorStop(0, '#1a1a33');
-                    craterGrad.addColorStop(0.7, '#333366');
-                    craterGrad.addColorStop(1, 'transparent');
-                    ctx.fillStyle = craterGrad;
-                    ctx.beginPath();
-                    ctx.arc(x, y, r, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            moon.material.map = texture;
-            moon.material.bumpMap = texture;
-            moon.material.needsUpdate = true;
-        }
-
-        /**
          * Belirgin yıldızlar
          */
         function createEnhancedStars() {
             const starConfigs = [
-                { count: 2000, size: [0.8, 2.5], color: 0x8a2be2, range: 150 },
-                { count: 1500, size: [0.5, 2.0], color: 0xff00ff, range: 130 },
-                { count: 1200, size: [0.4, 1.5], color: 0x9370db, range: 110 },
+                { count: 2000, size: [0.8, 2.5], color: 0x9a4ce2, range: 150 }, // Hafif mor
+                { count: 1500, size: [0.5, 2.0], color: 0xff40ff, range: 130 }, // Parlak mor-pembe
+                { count: 1200, size: [0.4, 1.5], color: 0xa380e2, range: 110 }, // Açık mor
                 { count: 800, size: [1.0, 3.0], color: 0xffffff, range: 140 }
             ];
 
@@ -523,19 +470,19 @@
         }
 
         /**
-         * ✨ 3D "ELIFIM" YAZISI (GÜNCELLENDİ)
-         * "ELIFIM" olarak düzeltildi.
-         * Harfler Ay'a daha yakın ve birbirine daha sıkı.
+         * ✨ 3D "MIFILE" YAZISI (GÜNCELLENDİ)
+         * "MIFILE" olarak düzeltildi.
+         * Harfler Ay'a daha yakın ve birbirine daha sıkı, daha parlak.
          */
         function create3DTextOnMoon() {
-            // 🔥 YENİ: Metin "ELIFIM" olarak düzeltildi
-            const text = "ELIFIM";
+            // 🔥 YENİ: Metin "MIFILE" olarak düzeltildi
+            const text = "MIFILE";
             const moonRadius = 3.0; 
             
-            // 🔥 YENİ: Harfler Ay'a daha yakın
+            // Harfler Ay'a daha yakın
             const orbitRadius = moonRadius + 0.8; 
             
-            // 🔥 YENİ: Harfler arası boşluk azaltıldı
+            // Harfler arası boşluk azaltıldı
             const letterWidth = 1.1; 
             const letterSpacing = 0.15; 
             const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
@@ -547,12 +494,13 @@
             
             loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/fonts/helvetiker_bold.typeface.json', function ( font ) {
                 
+                // 🔥 YENİ: Daha belirgin ve daha fazla parlama için emissiveIntensity artırıldı
                 const textMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xff00ff,
-                    emissive: 0x8a2be2,
-                    emissiveIntensity: 0.8,
-                    specular: 0xffffff,
-                    shininess: 40,
+                    color: 0xff00ff, // Ana renk (parlak pembe/magenta)
+                    emissive: 0x8a2be2, // Kendi kendine ışık yayan renk (mor)
+                    emissiveIntensity: 1.0, // Parlaklık artırıldı
+                    specular: 0xffffff, // Parlak yansıma rengi
+                    shininess: 60, // Yansıma keskinliği artırıldı
                     flatShading: true
                 });
 
@@ -590,7 +538,7 @@
                     textLetters.push(letter);
                 });
 
-                console.log('✓ Gerçek 3D "ELIFIM" yazısı ANA SAHNEYE eklendi.');
+                console.log('✓ Gerçek 3D "MIFILE" yazısı ANA SAHNEYE eklendi.');
             });
         }
 
@@ -663,7 +611,8 @@
                 letter.rotation.y = -angle + Math.PI / 2;
                 
                 letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
-                letter.material.emissiveIntensity = 0.5 + Math.sin(time * 3 + i * 0.5) * 0.3;
+                // Parlaklık sürekli değişiyor, bu belirginliği artırır
+                letter.material.emissiveIntensity = 0.8 + Math.sin(time * 3 + i * 0.5) * 0.2; 
             });
 
             stars.forEach(starField => {
@@ -789,7 +738,7 @@
         /**
          * Uygulamayı başlat
          */
-        console.log('🚀 Romantik Uzay Sitesi (v5 - ELIFIM Düzeltmesi) başlatılıyor...');
+        console.log('🚀 Romantik Uzay Sitesi (v6 - MIFILE + Daha Mor Uzay) başlatılıyor...');
         console.log('💜 Elif için özel olarak hazırlandı');
         init();
         console.log('✓ Site başarıyla yüklendi!');
