@@ -255,10 +255,9 @@
     
     <div class="ambient-glow"></div>
     
-    <!-- Sayaç -->
     <div class="counter-container">
         <div class="counter-title">Birlikte</div>
-        <div class="counter-value" id="dayCounter">8</div>
+        <div class="counter-value" id="dayCounter">0</div>
         <div class="counter-label">Gün 💜</div>
     </div>
     
@@ -276,22 +275,23 @@
     
     <script>
         /**
-         * PROFESYONEL ROMANTIC SPACE SITE
+         * ELİF İÇİN ÖZEL 1. AY DÖNÜMÜ SİTESİ 💜🌙
          * Three.js ile Ay ve 3D "ELİFİM" yazısı
-         * Kayan yıldızlar ve sayaç sistemi
+         * Kayan yıldızlar ve yıldönümü sayacı
          */
 
         // Global değişkenler
-        let scene, camera, renderer, moon, textGroup;
+        let scene, camera, renderer, moon, textLetters = [];
         let touchStartX = 0;
         let targetRotationY = 0, currentRotationY = 0;
         let musicPlaying = false;
         let stars = [];
-        let shootingStars = [];
 
-        // Başlangıç tarihi (8 gün önce)
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - 8);
+        // ⭐ YILDÖNÜMÜ TARİHİNİZİ BURAYA GİRİN ⭐
+        // Format: new Date('YYYY-AA-GGTHH:MM:SS')
+        // Örnek: new Date('2025-10-13T00:00:00') - 13 Ekim 2025
+        // 1. AY DÖNÜMÜ İÇİN TARİH DÜZELTİLDİ:
+        const anniversaryDate = new Date('2025-10-13T00:00:00');
 
         /**
          * Sahneyi başlat
@@ -326,7 +326,7 @@
             // Belirgin yıldızlar
             createEnhancedStars();
 
-            // 3D "ELİFİM" yazısı - Ay'a yapışık, yerçekimi kanunlarına uygun
+            // ✨ 3D "ELİFİM" yazısı - Ay'a YAPIŞIK (Ay'ın child'ı)
             create3DTextOnMoon();
 
             // Event listeners
@@ -548,18 +548,19 @@
         }
 
         /**
-         * 3D "ELİFİM" yazısı - Verdiğiniz koddan alınan mantık
+         * ✨ 3D "ELİFİM" yazısı - AY'A YAPIŞIK (HİYERARŞİ DÜZELTİLDİ)
+         * Harfler artık moon.add() ile Ay'ın çocuğu olarak ekleniyor
          */
         function create3DTextOnMoon() {
             const text = "ELİFİM";
             const moonRadius = 3.5;
-            const orbitRadius = moonRadius + 0.25; // Ay'a yapışık
+            const orbitRadius = moonRadius + 0.25; // Ay yüzeyinden 0.25 birim yukarıda
             const letterWidth = 0.9;
-            const letterSpacing = 0.05; // Birleşik görünüm için minimal boşluk
+            const letterSpacing = 0.05; // Minimal boşluk
             const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
             const startAngle = -Math.atan(totalWidth / (2 * orbitRadius));
 
-            textLetters = []; // Global array'e ekle
+            textLetters = []; // Harfleri takip etmek için
 
             text.split('').forEach((char, i) => {
                 // Canvas texture oluştur
@@ -584,12 +585,12 @@
 
                 const texture = new THREE.CanvasTexture(canvas);
                 
-                // 3D Box geometry (CAM DEĞİL - sadece temiz 3D)
-                const geometry = new THREE.BoxGeometry(0.9, 1.2, 0.4); // Daha belirgin derinlik
+                // 3D Box geometry
+                const geometry = new THREE.BoxGeometry(0.9, 1.2, 0.4);
                 const material = new THREE.MeshPhongMaterial({
                     map: texture,
                     transparent: true,
-                    opacity: 0.95, // Başlangıçta görünür
+                    opacity: 0.95,
                     emissive: 0xff00ff,
                     emissiveIntensity: 0.5,
                     shininess: 100,
@@ -599,20 +600,28 @@
                 const letter = new THREE.Mesh(geometry, material);
                 letter.castShadow = true;
                 
-                // Pozisyon hesaplama - VERDİĞİNİZ KODDAN
+                // ⭐ POZİSYON HESAPLAMA (SADECE BİR KEZ, BAŞLANGIŞTA)
                 const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
                 const angle = startAngle + Math.atan(offset / orbitRadius);
                 
+                // Harfin Ay'a göre STATİK pozisyonu
+                letter.position.x = Math.cos(angle) * orbitRadius;
+                letter.position.z = Math.sin(angle) * orbitRadius;
+                letter.position.y = 0;
+                
+                // Teğet rotasyon (Ay'ın yüzeyine paralel)
+                letter.rotation.y = -angle + Math.PI / 2;
+                
                 letter.userData = {
-                    baseAngle: angle,
-                    orbitRadius: orbitRadius,
-                    index: i,
-                    targetOpacity: 0.95
+                    index: i
                 };
                 
-                scene.add(letter);
+                // 🔥 ÖNEMLİ: Harfi moon objesine ekle (scene'e değil!)
+                moon.add(letter);
                 textLetters.push(letter);
             });
+
+            console.log('✓ "ELİFİM" yazısı Ay\'a yapıştırıldı (moon.add kullanıldı)');
         }
 
         /**
@@ -622,7 +631,6 @@
             const star = document.createElement('div');
             star.className = 'shooting-star';
             
-            // Rastgele başlangıç pozisyonu (üst kenardan)
             const startX = Math.random() * window.innerWidth;
             const startY = -50;
             const endX = startX + (Math.random() * 400 + 200);
@@ -630,8 +638,6 @@
             
             star.style.left = startX + 'px';
             star.style.top = startY + 'px';
-            
-            // Kuyruk efekti
             star.style.boxShadow = `
                 0 0 10px 2px rgba(255, 255, 255, 0.8),
                 -50px -50px 40px 10px rgba(138, 43, 226, 0.4)
@@ -639,7 +645,6 @@
             
             document.body.appendChild(star);
             
-            // Animasyon
             const duration = 1500 + Math.random() * 1000;
             const startTime = Date.now();
             
@@ -672,26 +677,15 @@
 
             const time = Date.now() * 0.001;
 
-            // Ay dönüyor
+            // 🌙 AY DÖNÜYOR (harfler otomatik onunla birlikte dönecek!)
             moon.rotation.y += 0.002;
             moon.rotation.x = Math.sin(time * 0.15) * 0.02;
             moon.position.y = Math.sin(time * 0.1) * 0.05;
 
-            // "ELİFİM" VERDİĞİNİZ KODDAN - Ay'a yapışık dönüş
-            const orbitRotation = time * 0.3;
-
+            // ✨ HARFLER İÇİN SADECE PARLAMA VE HAFIF SALINIM
+            // (Pozisyon hesaplamaları KALDIRILDİ - harfler Ay ile birlikte dönüyor!)
             textLetters.forEach((letter, i) => {
-                // VERDİĞİNİZ KODDAK İ MANTIK
-                const angle = letter.userData.baseAngle - orbitRotation; // Negatif = sağdan sola
-                const radius = letter.userData.orbitRadius;
-                
-                // Orbital pozisyon
-                letter.position.x = Math.cos(angle) * radius;
-                letter.position.z = Math.sin(angle) * radius;
-                letter.position.y = 0;
-                
-                // Teğet rotasyon (Ay'a yapışık)
-                letter.rotation.y = -angle + Math.PI / 2;
+                // Hafif kendi ekseninde salınım
                 letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
                 
                 // Parlama efekti
@@ -714,12 +708,20 @@
         }
 
         /**
-         * Sayaç güncelleme
+         * ⭐ YILDÖNÜMÜ SAYACI (DÜZELTİLDİ)
+         * anniversaryDate'ten bu yana kaç gün geçtiğini hesaplar
          */
         function updateCounter() {
             const now = new Date();
-            const diffTime = Math.abs(now - startDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffTime = now - anniversaryDate; // Milisaniye farkı
+            
+            if (diffTime < 0) {
+                // Yıldönümü tarihi henüz gelmedi
+                document.getElementById('dayCounter').textContent = '0';
+                return;
+            }
+            
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); // Gün sayısı
             document.getElementById('dayCounter').textContent = diffDays;
         }
 
@@ -739,7 +741,7 @@
                         console.log('✓ Müzik başlatıldı');
                     }).catch(err => {
                         console.error('⚠ Müzik hatası:', err);
-                        alert('Müzik yüklenemedi. Lütfen sayfayı yenileyin veya internet bağlantınızı kontrol edin.');
+                        alert('Müzik yüklenemedi. Lütfen sayfayı yenileyin.');
                     });
                 } else {
                     audio.pause();
