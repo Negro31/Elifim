@@ -273,14 +273,11 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/FontLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/geometries/TextGeometry.js"></script>
-    
     <script>
         /**
          * ELİF İÇİN ÖZEL 1. AY DÖNÜMÜ SİTESİ 💜🌙
-         * Three.js ile Ay ve GERÇEK 3D "ELİFİM" yazısı
-         * Kayan yıldızlar ve yıldönümü sayacı
+         * PERFORMANS VE TÜRKÇE KARAKTER ('İ') İÇİN GÜNCELLENDİ
+         * Harfler artık Aydan BAĞIMSIZ dönüyor.
          */
 
         // Global değişkenler
@@ -290,8 +287,9 @@
         let musicPlaying = false;
         let stars = [];
 
-        // ⭐ YILDÖNÜMÜ TARİHİNİZ (1. Ay için ayarlandı) ⭐
-        const anniversaryDate = new Date('2025-10-13T00:00:00');
+        // ⭐ GÜN SAYACI DÜZELTİLDİ: 30 GÜN OLACAK ŞEKİLDE
+        // 13 Kasım'dan 30 gün öncesi = 14 Ekim
+        const anniversaryDate = new Date('2025-10-14T00:00:00');
 
         /**
          * Sahneyi başlat
@@ -318,7 +316,7 @@
             createRealisticMoon();
             createEnhancedStars();
 
-            // ✨ 3D "ELİFİM" yazısı - GERÇEK 3D GEOMETRİ KULLANILARAK
+            // ✨ 3D "ELİFİM" yazısı - BAĞIMSIZ DÖNEN, KALIN ve PERFORMANSLI
             create3DTextOnMoon();
 
             window.addEventListener('resize', onWindowResize);
@@ -377,7 +375,7 @@
             const moonMaterial = new THREE.MeshPhongMaterial({
                 map: moonTexture,
                 bumpMap: moonTexture,
-                bumpScale: 0.1, // Daha belirgin kraterler için artırıldı
+                bumpScale: 0.1,
                 color: 0xccccff,
                 emissive: 0x4b0082,
                 emissiveIntensity: 0.15,
@@ -519,80 +517,80 @@
         }
 
         /**
-         * ✨ 3D "ELİFİM" YAZISI (YENİDEN DÜZENLENDİ)
-         * "Sticker" (BoxGeometry) yerine gerçek 3D yazı (TextGeometry) kullanılıyor.
-         * Harfler büyütüldü ve araları açıldı.
+         * ✨ 3D "ELİFİM" YAZISI (GÜNCELLENDİ)
+         * "İ" harfi ve performans için BoxGeometry'e dönüldü.
+         * Harfler BÜYÜTÜLDÜ ve KALINLAŞTIRILDI.
+         * Harfler artık AY'DAN BAĞIMSIZ dönüyor.
          */
         function create3DTextOnMoon() {
             const text = "ELİFİM";
             const moonRadius = 3.5;
-            const orbitRadius = moonRadius + 0.25; // Ay yüzeyinden 0.25 birim yukarıda
             
-            // 🔥 YENİ: Büyütülmüş harf boyutu ve aralığı
-            const letterWidth = 1.1; // Harfin kaplayacağı alan
-            const letterSpacing = 0.25; // Harfler arası boşluk
+            // 🔥 YENİ: Harfler artık Ay'dan daha uzakta (daha belirgin)
+            const orbitRadius = moonRadius + 1.2; 
+            
+            // 🔥 YENİ: Harf kutuları büyütüldü ve arası açıldı
+            const letterWidth = 1.3; 
+            const letterSpacing = 0.2;
             const totalWidth = (text.length * letterWidth) + ((text.length - 1) * letterSpacing);
             const startAngle = -Math.atan(totalWidth / (2 * orbitRadius));
 
-            textLetters = []; // Harfleri takip etmek için
-            
-            const loader = new THREE.FontLoader();
-            
-            // Three.js'in standart yazı fontunu yüklüyoruz
-            loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/fonts/helvetiker_bold.typeface.json', function ( font ) {
+            textLetters = [];
+
+            text.split('').forEach((char, i) => {
+                // Canvas texture oluştur ("İ" harfi için)
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+
+                // Neon gradient
+                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+                gradient.addColorStop(0, '#ff00ff');
+                gradient.addColorStop(0.5, '#ff99ff');
+                gradient.addColorStop(1, '#8a2be2');
+
+                ctx.shadowBlur = 45;
+                ctx.shadowColor = '#ff00ff';
+                ctx.font = 'bold 200px Arial'; // Türkçe karakterleri destekler
+                ctx.fillStyle = gradient;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(char, 128, 128); // "İ" harfi sorunsuz çizilir
+
+                const texture = new THREE.CanvasTexture(canvas);
                 
-                // 🔥 YENİ: Gerçek 3D yazı için malzeme (Sticker değil)
-                // Parlak, metalik, hacimli bir görünüm
-                const textMaterial = new THREE.MeshPhongMaterial({
-                    color: 0xff00ff,        // Ana renk
-                    emissive: 0x8a2be2,     // Işıma rengi
-                    specular: 0xffffff,     // Parlama rengi
-                    shininess: 30,          // Parlaklık
-                    flatShading: true       // Daha keskin 3D görünüm
+                // 🔥 YENİ: Daha BÜYÜK ve KALIN geometri
+                const geometry = new THREE.BoxGeometry(1.2, 1.5, 0.7); 
+                
+                const material = new THREE.MeshPhongMaterial({
+                    map: texture,
+                    transparent: true,
+                    opacity: 1.0, // Tamamen görünür
+                    emissive: 0xff00ff,
+                    emissiveIntensity: 0.8, // Daha parlak
+                    shininess: 100,
+                    side: THREE.DoubleSide
                 });
 
-                text.split('').forEach((char, i) => {
-                    
-                    // 🔥 YENİ: TextGeometry oluşturuluyor
-                    const geometry = new THREE.TextGeometry( char, {
-                        font: font,
-                        size: 1.1,         // Harf boyutu (BÜYÜTÜLDÜ)
-                        height: 0.3,       // Harf kalınlığı (HACİM)
-                        curveSegments: 12,
-                        bevelEnabled: true,
-                        bevelThickness: 0.03,
-                        bevelSize: 0.02,
-                        bevelOffset: 0,
-                        bevelSegments: 5
-                    } );
-                    
-                    // 🔥 YENİ: Harfi ortalamak (Ters/yamuk dönmeyi engeller)
-                    geometry.computeBoundingBox();
-                    const textOffset = geometry.boundingBox.getCenter(new THREE.Vector3()).multiplyScalar(-1);
-                    geometry.translate(textOffset.x, textOffset.y, textOffset.z);
-
-                    const letter = new THREE.Mesh( geometry, textMaterial );
-                    letter.castShadow = true;
-                    
-                    // Pozisyon hesaplama (Bu mantık aynı kaldı)
-                    const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
-                    const angle = startAngle + Math.atan(offset / orbitRadius);
-                    
-                    letter.position.x = Math.cos(angle) * orbitRadius;
-                    letter.position.z = Math.sin(angle) * orbitRadius;
-                    letter.position.y = 0; // Ay'ın ekvatorunda
-                    
-                    // Teğet rotasyon (Ay'ın yüzeyine paralel)
-                    letter.rotation.y = -angle + Math.PI / 2;
-                    
-                    letter.userData = { index: i };
-                    
-                    moon.add(letter); // Harfi Ay'a ekliyoruz
-                    textLetters.push(letter);
-                });
-
-                console.log('✓ Gerçek 3D "ELİFİM" yazısı Ay\'a yapıştırıldı');
+                const letter = new THREE.Mesh(geometry, material);
+                letter.castShadow = true;
+                
+                // 🔥 YENİ: Animasyon için veri sakla (Bağımsız dönüş)
+                const offset = i * (letterWidth + letterSpacing) - (totalWidth / 2) + (letterWidth / 2);
+                const angle = startAngle + Math.atan(offset / orbitRadius);
+                
+                letter.userData = {
+                    baseAngle: angle,
+                    orbitRadius: orbitRadius,
+                    index: i
+                };
+                
+                // 🔥 YENİ: Harfi Ay'a değil, ANA SAHNEYE ekle
+                scene.add(letter);
+                textLetters.push(letter);
             });
+            console.log('✓ "ELİFİM" yazısı (CanvasTexture) ana sahneye eklendi.');
         }
 
         /**
@@ -647,15 +645,29 @@
 
             const time = Date.now() * 0.001;
 
-            // 🔥 HIZLANDIRILDI: Ay'ın dönüş hızı artırıldı
-            moon.rotation.y += 0.004;
+            // Ay kendi ekseninde dönüyor
+            moon.rotation.y += 0.004; // Hızlı dönüş
             moon.rotation.x = Math.sin(time * 0.15) * 0.02;
             moon.position.y = Math.sin(time * 0.1) * 0.05;
 
-            // Harflerin kendi ekseninde hafif salınımı
+            // 🔥 YENİ: Harfler Ay'dan BAĞIMSIZ dönüyor
+            const orbitRotation = time * 0.3; // Harflerin dönüş hızı
+
             textLetters.forEach((letter, i) => {
+                const angle = letter.userData.baseAngle - orbitRotation;
+                const radius = letter.userData.orbitRadius;
+                
+                // Orbital pozisyon
+                letter.position.x = Math.cos(angle) * radius;
+                letter.position.z = Math.sin(angle) * radius;
+                letter.position.y = 0; // Ay'ın ekvatorunda
+                
+                // Teğet rotasyon (Ay'a paralel gibi)
+                letter.rotation.y = -angle + Math.PI / 2;
+                
+                // Hafif salınım ve parlama
                 letter.rotation.x = Math.sin(time * 2 + i) * 0.04;
-                letter.material.emissiveIntensity = 0.4 + Math.sin(time * 3 + i * 0.5) * 0.2;
+                letter.material.emissiveIntensity = 0.5 + Math.sin(time * 3 + i * 0.5) * 0.3;
             });
 
             // Yıldızlar
@@ -674,30 +686,30 @@
         }
 
         /**
-         * Yıldönümü sayacı
+         * ⭐ GÜN SAYACI (30 GÜN İÇİN GÜNCELLENDİ)
          */
         function updateCounter() {
             const now = new Date();
-            const diffTime = now - anniversaryDate;
+            const diffTime = now - anniversaryDate; // Milisaniye farkı
             
             if (diffTime < 0) {
                 document.getElementById('dayCounter').textContent = '0';
                 return;
             }
             
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            // Tarih '2025-10-14' olarak ayarlandığı için 13 Kasım'da 30 gösterecek
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
             document.getElementById('dayCounter').textContent = diffDays;
         }
 
         /**
-         * Müzik kontrolü
+         * Müzik kontrolü (Kasma optimizasyonu devam ediyor)
          */
         function setupMusic() {
             const btn = document.getElementById('musicButton');
             const audio = document.getElementById('bgMusic');
 
-            // 🔥 YENİ: Sayfa açıldığında müziği yüklemeye başla
-            // Bu, butona basıldığındaki takılmayı azaltmaya yardımcı olur
+            // Sayfa açıldığında müziği yüklemeye başla
             audio.load();
 
             btn.addEventListener('click', function() {
@@ -785,7 +797,7 @@
         /**
          * Uygulamayı başlat
          */
-        console.log('🚀 Romantik Uzay Sitesi (v2 - Gerçek 3D Yazı) başlatılıyor...');
+        console.log('🚀 Romantik Uzay Sitesi (v3 - Bağımsız Dönüş + "İ" Desteği) başlatılıyor...');
         console.log('💜 Elif için özel olarak hazırlandı');
         init();
         console.log('✓ Site başarıyla yüklendi!');
